@@ -21,19 +21,17 @@ def infer_loader(model_name):
     path_to_model = Path(f'{shared.args.model_dir}/{model_name}')
     model_settings = get_model_settings_from_yamls(model_name)
     if not path_to_model.exists():
-        loader = None
+        return None
     elif Path(f'{shared.args.model_dir}/{model_name}/quantize_config.json').exists() or ('wbits' in model_settings and type(model_settings['wbits']) is int and model_settings['wbits'] > 0):
-        loader = 'AutoGPTQ'
+        return 'AutoGPTQ'
     elif len(list(path_to_model.glob('*.gguf*')) + list(path_to_model.glob('*ggml*.bin'))) > 0:
-        loader = 'llama.cpp'
+        return 'llama.cpp'
     elif re.match(r'.*\.gguf|.*ggml.*\.bin', model_name.lower()):
-        loader = 'llama.cpp'
+        return 'llama.cpp'
     elif re.match(r'.*rwkv.*\.pth', model_name.lower()):
-        loader = 'RWKV'
+        return 'RWKV'
     else:
-        loader = 'Transformers'
-
-    return loader
+        return 'Transformers'
 
 
 # UI: update the command-line arguments based on the interface values
@@ -70,12 +68,7 @@ def update_model_parameters(state, initial=False):
 
         setattr(shared.args, element, value)
 
-    found_positive = False
-    for i in gpu_memories:
-        if i > 0:
-            found_positive = True
-            break
-
+    found_positive = any(i > 0 for i in gpu_memories)
     if not (initial and vars(shared.args)['gpu_memory'] != vars(shared.args_defaults)['gpu_memory']):
         if found_positive:
             shared.args.gpu_memory = [f"{i}MiB" for i in gpu_memories]
@@ -92,7 +85,14 @@ def apply_model_settings_to_state(model, state):
             loader = 'AutoGPTQ'
 
         # If the user is using an alternative loader for the same model type, let them keep using it
-        if not (loader == 'AutoGPTQ' and state['loader'] in ['GPTQ-for-LLaMa', 'ExLlama', 'ExLlama_HF']) and not (loader == 'llama.cpp' and state['loader'] in ['llamacpp_HF', 'ctransformers']):
+        if (
+            loader != 'AutoGPTQ'
+            or state['loader']
+            not in ['GPTQ-for-LLaMa', 'ExLlama', 'ExLlama_HF']
+        ) and (
+            loader != 'llama.cpp'
+            or state['loader'] not in ['llamacpp_HF', 'ctransformers']
+        ):
             state['loader'] = loader
 
     for k in model_settings:
@@ -112,12 +112,8 @@ def save_model_settings(model, state):
         return
 
     with Path(f'{shared.args.model_dir}/config-user.yaml') as p:
-        if p.exists():
-            user_config = yaml.safe_load(open(p, 'r').read())
-        else:
-            user_config = {}
-
-        model_regex = model + '$'  # For exact matches
+        user_config = yaml.safe_load(open(p, 'r').read()) if p.exists() else {}
+        model_regex = f'{model}$'
         for _dict in [user_config, shared.model_config]:
             if model_regex not in _dict:
                 _dict[model_regex] = {}

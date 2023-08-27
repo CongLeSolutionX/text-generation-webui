@@ -16,8 +16,7 @@ def load_quantized(model_name):
         pt_path = Path(shared.args.checkpoint)
     else:
         for ext in ['.safetensors', '.pt', '.bin']:
-            found = list(path_to_model.glob(f"*{ext}"))
-            if len(found) > 0:
+            if found := list(path_to_model.glob(f"*{ext}")):
                 if len(found) > 1:
                     logger.warning(f'More than one {ext} model has been found. The last one will be selected. It could be wrong.')
 

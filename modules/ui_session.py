@@ -67,7 +67,4 @@ def get_boolean_arguments(active=False):
     bool_list = sorted([k for k in cmd_list if type(cmd_list[k]) is bool and k not in exclude + ui.list_model_elements()])
     bool_active = [k for k in bool_list if vars(shared.args)[k]]
 
-    if active:
-        return bool_active
-    else:
-        return bool_list
+    return bool_active if active else bool_list

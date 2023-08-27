@@ -20,10 +20,10 @@ with open(Path(__file__).resolve().parent / '../css/html_4chan_style.css', 'r') 
 with open(Path(__file__).resolve().parent / '../css/html_instruct_style.css', 'r') as f:
     instruct_css = f.read()
 
-# Custom chat styles
-chat_styles = {}
-for k in get_available_chat_styles():
-    chat_styles[k] = open(Path(f'css/chat_style-{k}.css'), 'r').read()
+chat_styles = {
+    k: open(Path(f'css/chat_style-{k}.css'), 'r').read()
+    for k in get_available_chat_styles()
+}
 
 
 def fix_newlines(string):
@@ -55,13 +55,9 @@ def convert_to_markdown(string):
             is_code = not is_code
 
         result += line
-        if is_code or line.startswith('|'):  # Don't add an extra \n for tables or code
-            result += '\n'
-        else:
-            result += '\n\n'
-
+        result += '\n' if is_code or line.startswith('|') else '\n\n'
     if is_code:
-        result = result + '```'  # Unfinished code block
+        result = f'{result}```'
 
     result = result.strip()
 
@@ -98,16 +94,12 @@ def generate_basic_html(string):
 def process_post(post, c):
     t = post.split('\n')
     number = t[0].split(' ')[1]
-    if len(t) > 1:
-        src = '\n'.join(t[1:])
-    else:
-        src = ''
+    src = '\n'.join(t[1:]) if len(t) > 1 else ''
     src = re.sub('>', '&gt;', src)
     src = re.sub('(&gt;&gt;[0-9]*)', '<span class="quote">\\1</span>', src)
     src = re.sub('\n', '<br>\n', src)
     src = f'<blockquote class="message_4chan">{src}\n'
-    src = f'<span class="name">Anonymous </span> <span class="number">No.{number}</span>\n{src}'
-    return src
+    return f'<span class="name">Anonymous </span> <span class="number">No.{number}</span>\n{src}'
 
 
 def generate_4chan_html(f):

@@ -20,11 +20,10 @@ model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-capt
 
 def chat_input_modifier(text, visible_text, state):
     global input_hijack
-    if input_hijack['state']:
-        input_hijack['state'] = False
-        return input_hijack['value']
-    else:
+    if not input_hijack['state']:
         return text, visible_text
+    input_hijack['state'] = False
+    return input_hijack['value']
 
 
 def caption_image(raw_image):

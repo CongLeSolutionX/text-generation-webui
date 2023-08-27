@@ -58,8 +58,6 @@ class Iteratorize:
                 pass
             except:
                 traceback.print_exc()
-                pass
-
             clear_torch_cache()
             self.q.put(self.sentinel)
             if self.c_callback:

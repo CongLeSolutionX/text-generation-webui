@@ -179,11 +179,12 @@ class ModelDownloader:
         # Creating the folder and writing the metadata
         output_folder.mkdir(parents=True, exist_ok=True)
         metadata = f'url: https://huggingface.co/{model}\n' \
-                   f'branch: {branch}\n' \
-                   f'download date: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n'
+                       f'branch: {branch}\n' \
+                       f'download date: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n'
 
-        sha256_str = '\n'.join([f'    {item[1]} {item[0]}' for item in sha256])
-        if sha256_str:
+        if sha256_str := '\n'.join(
+            [f'    {item[1]} {item[0]}' for item in sha256]
+        ):
             metadata += f'sha256sum:\n{sha256_str}'
 
         metadata += '\n'

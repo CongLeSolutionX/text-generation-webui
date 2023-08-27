@@ -20,7 +20,7 @@ class LogitsBiasProcessor(LogitsProcessor):
     def __init__(self, logit_bias={}):
         self.logit_bias = logit_bias
         if self.logit_bias:
-            self.keys = list([int(key) for key in self.logit_bias.keys()])
+            self.keys = [int(key) for key in self.logit_bias.keys()]
             values = [ self.logit_bias[str(key)] for key in self.keys ]
             self.values = torch.tensor(values, dtype=torch.float, device=shared.model.device)
             debug_msg(f"{self})")
@@ -106,8 +106,7 @@ def marshal_common_params(body):
     # user - ignored
 
     logits_processor = []
-    logit_bias = body.get('logit_bias', None)
-    if logit_bias:  # {str: float, ...}
+    if logit_bias := body.get('logit_bias', None):
         # XXX convert tokens from tiktoken based on requested model
         # Ex.: 'logit_bias': {'1129': 100, '11442': 100, '16243': 100}
         try:
@@ -115,7 +114,7 @@ def marshal_common_params(body):
             new_logit_bias = {}
             for logit, bias in logit_bias.items():
                 for x in encode(encoder.decode([int(logit)]), add_special_tokens=False)[0]:
-                    if int(x) in [0, 1, 2, 29871]: # XXX LLAMA tokens
+                    if int(x) in {0, 1, 2, 29871}: # XXX LLAMA tokens
                         continue
                     new_logit_bias[str(int(x))] = bias
             debug_msg('logit_bias_map', logit_bias, '->', new_logit_bias)
@@ -146,7 +145,7 @@ def messages_to_prompt(body: dict, req_params: dict, max_tokens):
     if body.get('function_call', ''):  # chat only, 'none', 'auto', {'name': 'func'}
         raise InvalidRequestError(message="function_call is not supported.", param='function_call')
 
-    if not 'messages' in body:
+    if 'messages' not in body:
         raise InvalidRequestError(message="messages is required", param='messages')
 
     messages = body['messages']
@@ -159,7 +158,7 @@ def messages_to_prompt(body: dict, req_params: dict, max_tokens):
         'prompt': 'Assistant:',
     }
 
-    if not 'stopping_strings' in req_params:
+    if 'stopping_strings' not in req_params:
         req_params['stopping_strings'] = []
 
     # Instruct models can be much better
@@ -216,16 +215,16 @@ def messages_to_prompt(body: dict, req_params: dict, max_tokens):
             raise InvalidRequestError(message="messages: missing role", param='messages')
         if 'content' not in m:
             raise InvalidRequestError(message="messages: missing content", param='messages')
-        
+
         role = m['role']
         content = m['content']
         # name = m.get('name', None)
         # function_call = m.get('function_call', None) # user name or function name with output in content
         msg = role_formats[role].format(message=content)
-        if role == 'system':
-            system_msgs.extend([msg])
-        elif role == 'function':
+        if role == 'function':
             raise InvalidRequestError(message="role: function is not supported.", param='messages')
+        elif role == 'system':
+            system_msgs.extend([msg])
         else:
             chat_msgs.extend([msg])
 
@@ -439,7 +438,7 @@ def completions(body: dict, is_legacy: bool = False):
 
     # ... encoded as a string, array of strings, array of tokens, or array of token arrays.
     prompt_str = 'context' if is_legacy else 'prompt'
-    if not prompt_str in body:
+    if prompt_str not in body:
         raise InvalidRequestError("Missing required input", param=prompt_str)
 
     prompt_arg = body[prompt_str]
@@ -510,7 +509,7 @@ def completions(body: dict, is_legacy: bool = False):
 
         resp_list_data.extend([respi])
 
-    resp = {
+    return {
         "id": cmpl_id,
         "object": object_type,
         "created": created_time,
@@ -519,11 +518,10 @@ def completions(body: dict, is_legacy: bool = False):
         "usage": {
             "prompt_tokens": total_prompt_token_count,
             "completion_tokens": total_completion_token_count,
-            "total_tokens": total_prompt_token_count + total_completion_token_count
-        }
+            "total_tokens": total_prompt_token_count
+            + total_completion_token_count,
+        },
     }
-
-    return resp
 
 
 # generator
@@ -538,7 +536,7 @@ def stream_completions(body: dict, is_legacy: bool = False):
 
     # ... encoded as a string, array of strings, array of tokens, or array of token arrays.
     prompt_str = 'context' if is_legacy else 'prompt'
-    if not prompt_str in body:
+    if prompt_str not in body:
         raise InvalidRequestError("Missing required input", param=prompt_str)
 
     prompt = body[prompt_str]

@@ -24,8 +24,7 @@ options = {
 
 
 def ui():
-    settings = shared.settings.get("ngrok")
-    if settings:
+    if settings := shared.settings.get("ngrok"):
         options.update(settings)
 
     try:

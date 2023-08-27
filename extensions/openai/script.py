@@ -54,7 +54,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def send_sse(self, chunk: dict):
-        response = 'data: ' + json.dumps(chunk) + '\r\n\r\n'
+        response = f'data: {json.dumps(chunk)}' + '\r\n\r\n'
         debug_msg(response[:-4])
         self.wfile.write(response.encode('utf-8'))
 
@@ -150,9 +150,7 @@ class Handler(BaseHTTPRequestHandler):
                 raise ServiceUnavailableError("No model loaded.")
 
             is_legacy = '/generate' in self.path
-            is_streaming = body.get('stream', False)
-
-            if is_streaming:
+            if is_streaming := body.get('stream', False):
                 self.start_sse()
 
                 response = []
@@ -193,7 +191,7 @@ class Handler(BaseHTTPRequestHandler):
             self.return_json(response)
 
         elif '/images/generations' in self.path:
-            if not 'SD_WEBUI_URL' in os.environ:
+            if 'SD_WEBUI_URL' not in os.environ:
                 raise ServiceUnavailableError("Stable Diffusion not available. SD_WEBUI_URL not set.")
 
             prompt = body['prompt']

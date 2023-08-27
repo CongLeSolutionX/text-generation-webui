@@ -49,7 +49,9 @@ def ui():
         activate = gr.Checkbox(value=params['activate'], label='Activate translation')
 
     with gr.Row():
-        language = gr.Dropdown(value=language_name, choices=[k for k in language_codes], label='Language')
+        language = gr.Dropdown(
+            value=language_name, choices=list(language_codes), label='Language'
+        )
 
     # Event functions to update the parameters in the backend
     activate.change(lambda x: params.update({"activate": x}), activate, None)

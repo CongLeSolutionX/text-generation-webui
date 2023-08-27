@@ -14,7 +14,11 @@ def generations(prompt: str, size: str, response_format: str, n: int):
     # At this point I will not add the edits and variations endpoints (ie. img2img) because they
     # require changing the form data handling to accept multipart form data, also to properly support
     # url return types will require file management and a web serving files... Perhaps later!
-    base_model_size = 512 if not 'SD_BASE_MODEL_SIZE' in os.environ else int(os.environ.get('SD_BASE_MODEL_SIZE', 512))
+    base_model_size = (
+        512
+        if 'SD_BASE_MODEL_SIZE' not in os.environ
+        else int(os.environ.get('SD_BASE_MODEL_SIZE', 512))
+    )
     sd_defaults = {
         'sampler_name': 'DPM++ 2M Karras',  # vast improvement
         'steps': 30,
@@ -22,15 +26,12 @@ def generations(prompt: str, size: str, response_format: str, n: int):
 
     width, height = [int(x) for x in size.split('x')]  # ignore the restrictions on size
 
-    # to hack on better generation, edit default payload.
     payload = {
         'prompt': prompt,  # ignore prompt limit of 1000 characters
         'width': width,
         'height': height,
         'batch_size': n,
-    }
-    payload.update(sd_defaults)
-
+    } | sd_defaults
     scale = min(width, height) / base_model_size
     if scale >= 1.2:
         # for better performance with the default size (1024), and larger res.
@@ -42,7 +43,7 @@ def generations(prompt: str, size: str, response_format: str, n: int):
             'hr_upscaler': 'Latent',
             'denoising_strength': 0.68,
         }
-        payload.update(scaler)
+        payload |= scaler
 
     resp = {
         'created': int(time.time()),

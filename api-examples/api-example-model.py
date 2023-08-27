@@ -120,11 +120,7 @@ def complex_model_load(model):
             req['args']['n_gpu_layers'] = 42  # 24GB
     elif 'rwkv' in model:
         req['args']['rwkv_cuda_on'] = True
-        if '14b' in model:
-            req['args']['rwkv_strategy'] = 'cuda f16i8'  # 24GB
-        else:
-            req['args']['rwkv_strategy'] = 'cuda f16'  # 24GB
-
+        req['args']['rwkv_strategy'] = 'cuda f16i8' if '14b' in model else 'cuda f16'
     return model_api(req)
 
 

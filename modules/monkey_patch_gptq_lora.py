@@ -27,7 +27,7 @@ def load_model_llama(model_name):
     model_path = str(find_quantized_model_file(model_name))
     model, tokenizer = load_llama_model_4bit_low_ram(config_path, model_path, groupsize=shared.args.groupsize, is_v1_model=False)
     for n, m in model.named_modules():
-        if isinstance(m, Autograd4bitQuantLinear) or isinstance(m, Linear4bitLt):
+        if isinstance(m, (Autograd4bitQuantLinear, Linear4bitLt)):
             if m.is_v1_model:
                 m.zeros = m.zeros.half()
             m.scales = m.scales.half()

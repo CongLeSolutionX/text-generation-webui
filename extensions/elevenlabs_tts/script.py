@@ -32,8 +32,7 @@ def update_api_key(key):
 def refresh_voices():
     global params
     your_voices = elevenlabs.voices()
-    voice_names = [voice.name for voice in your_voices]
-    return voice_names
+    return [voice.name for voice in your_voices]
 
 
 def refresh_voices_dd():
