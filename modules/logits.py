@@ -24,8 +24,7 @@ def get_next_logits(prompt, state, use_samplers, previous):
     topk_values = [f"{float(i):.5f}" for i in topk_values]
     tokens = [shared.tokenizer.decode(i) for i in topk_indices]
 
-    output = ''
-    for row in list(zip(topk_values, tokens)):
-        output += f"{row[0]}  -  {row[1]}\n"
-
+    output = ''.join(
+        f"{row[0]}  -  {row[1]}\n" for row in list(zip(topk_values, tokens))
+    )
     return output, previous

@@ -106,8 +106,7 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
     Replaces the function that generates the prompt from the chat history.
     Only used in chat mode.
     """
-    result = chat.generate_chat_prompt(user_input, state, **kwargs)
-    return result
+    return chat.generate_chat_prompt(user_input, state, **kwargs)
 
 def custom_css():
     """

@@ -153,14 +153,12 @@ def huggingface_loader(model_name):
         else:
             model = model.cuda()
 
-    # DeepSpeed ZeRO-3
     elif shared.args.deepspeed:
         model = LoaderClass.from_pretrained(Path(f"{shared.args.model_dir}/{model_name}"), torch_dtype=torch.bfloat16 if shared.args.bf16 else torch.float16)
         model = deepspeed.initialize(model=model, config_params=ds_config, model_parameters=None, optimizer=None, lr_scheduler=None)[0]
         model.module.eval()  # Inference
         logger.info(f"DeepSpeed ZeRO-3 is enabled: {is_deepspeed_zero3_enabled()}")
 
-    # Custom
     else:
         params = {
             "low_cpu_mem_usage": True,
@@ -181,12 +179,19 @@ def huggingface_loader(model_name):
                 # and https://huggingface.co/blog/4bit-transformers-bitsandbytes
                 quantization_config_params = {
                     'load_in_4bit': True,
-                    'bnb_4bit_compute_dtype': eval("torch.{}".format(shared.args.compute_dtype)) if shared.args.compute_dtype in ["bfloat16", "float16", "float32"] else None,
+                    'bnb_4bit_compute_dtype': eval(
+                        f"torch.{shared.args.compute_dtype}"
+                    )
+                    if shared.args.compute_dtype
+                    in ["bfloat16", "float16", "float32"]
+                    else None,
                     'bnb_4bit_quant_type': shared.args.quant_type,
                     'bnb_4bit_use_double_quant': shared.args.use_double_quant,
                 }
 
-                logger.warning("Using the following 4-bit params: " + str(quantization_config_params))
+                logger.warning(
+                    f"Using the following 4-bit params: {quantization_config_params}"
+                )
                 params['quantization_config'] = BitsAndBytesConfig(**quantization_config_params)
 
             elif shared.args.load_in_8bit and any((shared.args.auto_devices, shared.args.gpu_memory)):
@@ -276,20 +281,19 @@ def ctransformers_loader(model_name):
     ctrans = CtransformersModel()
     if ctrans.model_type_is_auto():
         model_file = path
+    elif path.is_file():
+        model_file = path
     else:
-        if path.is_file():
-            model_file = path
+        entries = Path(f'{shared.args.model_dir}/{model_name}')
+        gguf = list(entries.glob('*.gguf'))
+        bin = list(entries.glob('*.bin'))
+        if gguf:
+            model_file = gguf[0]
+        elif len(bin) > 0:
+            model_file = bin[0]
         else:
-            entries = Path(f'{shared.args.model_dir}/{model_name}')
-            gguf = list(entries.glob('*.gguf'))
-            bin = list(entries.glob('*.bin'))
-            if len(gguf) > 0:
-                model_file = gguf[0]
-            elif len(bin) > 0:
-                model_file = bin[0]
-            else:
-                logger.error("Could not find a model for ctransformers.")
-                return None, None
+            logger.error("Could not find a model for ctransformers.")
+            return None, None
 
     logger.info(f'ctransformers weights detected: {model_file}')
     model, tokenizer = ctrans.from_pretrained(model_file)
@@ -355,7 +359,7 @@ def get_max_memory_dict():
         logger.warning(f"Auto-assiging --gpu-memory {suggestion} for your GPU to try to prevent out-of-memory errors. You can manually set other values.")
         max_memory = {0: f'{suggestion}GiB', 'cpu': f'{shared.args.cpu_memory or 99}GiB'}
 
-    return max_memory if len(max_memory) > 0 else None
+    return max_memory if max_memory else None
 
 
 def clear_torch_cache():

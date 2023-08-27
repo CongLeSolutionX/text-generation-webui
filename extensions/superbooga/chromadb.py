@@ -41,7 +41,7 @@ class ChromaCollector(Collecter):
         self.ids = []
 
     def add(self, texts: list[str]):
-        if len(texts) == 0:
+        if not texts:
             return
 
         self.ids = [f"id{i}" for i in range(len(texts))]

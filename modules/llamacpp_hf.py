@@ -33,11 +33,7 @@ else:
 
 
 def llama_cpp_lib(model_file: Union[str, Path] = None):
-    if model_file is not None:
-        gguf_model = is_gguf(model_file)
-    else:
-        gguf_model = True
-
+    gguf_model = is_gguf(model_file) if model_file is not None else True
     if shared.args.cpu or llama_cpp_cuda is None:
         return llama_cpp if gguf_model else llama_cpp_ggml
     else:
@@ -113,7 +109,7 @@ class LlamacppHF(PreTrainedModel):
         labels = kwargs.get('labels', None)
         past_key_values = kwargs.get('past_key_values', None)
 
-        if len(args) > 0:
+        if args:
             if not shared.args.cfg_cache:
                 logger.error("Please enable the cfg-cache option to use CFG with llamacpp_HF.")
                 return
@@ -173,7 +169,7 @@ class LlamacppHF(PreTrainedModel):
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], *model_args, **kwargs):
-        assert len(model_args) == 0 and len(kwargs) == 0, "extra args is currently not supported"
+        assert not model_args and not kwargs, "extra args is currently not supported"
         if isinstance(pretrained_model_name_or_path, str):
             pretrained_model_name_or_path = Path(pretrained_model_name_or_path)
 
@@ -212,7 +208,7 @@ class LlamacppHF(PreTrainedModel):
                 'n_gqa': shared.args.n_gqa or None,
                 'rms_norm_eps': shared.args.rms_norm_eps or None,
             }
-            params = params | ggml_params
+            params |= ggml_params
 
         Llama = llama_cpp_lib(model_file).Llama
         model = Llama(**params)

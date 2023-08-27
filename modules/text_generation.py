@@ -26,8 +26,7 @@ from modules.models import clear_torch_cache, local_rank
 def generate_reply(*args, **kwargs):
     shared.generation_lock.acquire()
     try:
-        for result in _generate_reply(*args, **kwargs):
-            yield result
+        yield from _generate_reply(*args, **kwargs)
     finally:
         shared.generation_lock.release()
 
@@ -150,18 +149,17 @@ def generate_reply_wrapper(question, state, stopping_strings=None):
 
 
 def formatted_outputs(reply, model_name):
-    if any(s in model_name for s in ['gpt-4chan', 'gpt4chan']):
-        reply = fix_gpt4chan(reply)
-        return html.unescape(reply), generate_4chan_html(reply)
-    else:
+    if all(s not in model_name for s in ['gpt-4chan', 'gpt4chan']):
         return html.unescape(reply), generate_basic_html(reply)
+    reply = fix_gpt4chan(reply)
+    return html.unescape(reply), generate_4chan_html(reply)
 
 
 def fix_gpt4chan(s):
     """
     Removes empty replies from gpt4chan outputs
     """
-    for i in range(10):
+    for _ in range(10):
         s = re.sub("--- [0-9]*\n>>[0-9]*\n---", "---", s)
         s = re.sub("--- [0-9]*\n *\n---", "---", s)
         s = re.sub("--- [0-9]*\n\n\n---", "---", s)
@@ -192,7 +190,7 @@ def get_reply_from_output_ids(output_ids, input_ids, original_question, state, i
         # Prevent LlamaTokenizer from skipping a space
         if type(shared.tokenizer) in [transformers.LlamaTokenizer, transformers.LlamaTokenizerFast] and len(output_ids) > 0:
             if shared.tokenizer.convert_ids_to_tokens(int(output_ids[-new_tokens])).startswith('▁'):
-                reply = ' ' + reply
+                reply = f' {reply}'
 
     return reply
 
@@ -254,10 +252,10 @@ def generate_reply_HF(question, original_question, seed, state, stopping_strings
         generate_params['suppress_tokens'] = [shared.tokenizer.eos_token_id]
 
     if shared.args.no_cache:
-        generate_params.update({'use_cache': False})
+        generate_params['use_cache'] = False
 
     if shared.args.deepspeed:
-        generate_params.update({'synced_gpus': True})
+        generate_params['synced_gpus'] = True
 
     # Encode the input
     input_ids = encode(question, add_bos_token=state['add_bos_token'], truncation_length=get_max_prompt_length(state))
@@ -269,9 +267,9 @@ def generate_reply_HF(question, original_question, seed, state, stopping_strings
     # Add the encoded tokens to generate_params
     question, input_ids, inputs_embeds = apply_extensions('tokenizer', state, question, input_ids, None)
     original_input_ids = input_ids
-    generate_params.update({'inputs': input_ids})
+    generate_params['inputs'] = input_ids
     if inputs_embeds is not None:
-        generate_params.update({'inputs_embeds': inputs_embeds})
+        generate_params['inputs_embeds'] = inputs_embeds
 
     # Stopping criteria / eos token
     eos_token_ids = [shared.tokenizer.eos_token_id] if shared.tokenizer.eos_token_id is not None else []
@@ -345,9 +343,7 @@ def generate_reply_custom(question, original_question, seed, state, stopping_str
             reply = shared.model.generate(question, state)
             yield reply
         else:
-            for reply in shared.model.generate_with_streaming(question, state):
-                yield reply
-
+            yield from shared.model.generate_with_streaming(question, state)
     except Exception:
         traceback.print_exc()
     finally:

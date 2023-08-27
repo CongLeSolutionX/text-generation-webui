@@ -13,9 +13,7 @@ def float_list_to_base64(float_array: np.ndarray) -> str:
     # Encode bytes into base64
     encoded_bytes = base64.b64encode(bytes_array)
 
-    # Turn raw base64 encoded bytes into ASCII
-    ascii_string = encoded_bytes.decode('ascii')
-    return ascii_string
+    return encoded_bytes.decode('ascii')
 
 
 def end_line(s):

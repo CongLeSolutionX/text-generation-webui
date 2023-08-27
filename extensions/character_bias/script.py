@@ -43,13 +43,12 @@ def bot_prefix_modifier(string):
     the prefix text for the Bot and can be used to bias its
     behavior.
     """
-    if params['activate']:
-        if params['use custom string']:
-            return f'{string} {params["custom string"].strip()} '
-        else:
-            return f'{string} {params["bias string"].strip()} '
-    else:
+    if not params['activate']:
         return string
+    if params['use custom string']:
+        return f'{string} {params["custom string"].strip()} '
+    else:
+        return f'{string} {params["bias string"].strip()} '
 
 
 def ui():

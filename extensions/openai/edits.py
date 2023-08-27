@@ -85,18 +85,18 @@ def edits(instruction: str, input: str, temperature=1.0, top_p=1.0) -> dict:
 
     completion_token_count = len(encode(answer)[0])
 
-    resp = {
+    return {
         "object": "edit",
         "created": created_time,
-        "choices": [{
-            "text": answer,
-            "index": 0,
-        }],
+        "choices": [
+            {
+                "text": answer,
+                "index": 0,
+            }
+        ],
         "usage": {
             "prompt_tokens": token_count,
             "completion_tokens": completion_token_count,
-            "total_tokens": token_count + completion_token_count
-        }
+            "total_tokens": token_count + completion_token_count,
+        },
     }
-
-    return resp

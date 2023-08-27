@@ -148,10 +148,7 @@ def generate_chat_prompt(user_input, state, **kwargs):
         rows.pop(1)
 
     prompt = wrapper.replace('<|prompt|>', ''.join(rows))
-    if also_return_rows:
-        return prompt, rows
-    else:
-        return prompt
+    return (prompt, rows) if also_return_rows else prompt
 
 
 def get_stopping_strings(state):
@@ -217,7 +214,11 @@ def chatbot_wrapper(text, state, regenerate=False, _continue=False, loading_mess
         elif _continue:
             last_reply = [output['internal'][-1][1], output['visible'][-1][1]]
             if loading_message:
-                yield {'visible': output['visible'][:-1] + [[visible_text, last_reply[1] + '...']], 'internal': output['internal']}
+                yield {
+                    'visible': output['visible'][:-1]
+                    + [[visible_text, f'{last_reply[1]}...']],
+                    'internal': output['internal'],
+                }
 
     # Generate the prompt
     kwargs = {
@@ -252,7 +253,7 @@ def chatbot_wrapper(text, state, regenerate=False, _continue=False, loading_mess
             output['visible'][-1] = [visible_text, last_reply[1] + visible_reply]
             if is_stream:
                 yield output
-        elif not (j == 0 and visible_reply.strip() == ''):
+        elif j != 0 or visible_reply.strip() != '':
             output['internal'][-1] = [text, reply.lstrip(' ')]
             output['visible'][-1] = [visible_text, visible_reply.lstrip(' ')]
             if is_stream:
@@ -271,7 +272,7 @@ def impersonate_wrapper(text, state):
     prompt = generate_chat_prompt('', state, impersonate=True)
     stopping_strings = get_stopping_strings(state)
 
-    yield text + '...'
+    yield f'{text}...'
     reply = None
     for reply in generate_reply(prompt + text, state, stopping_strings=stopping_strings, is_chat=True):
         yield (text + reply).lstrip(' ')
@@ -280,15 +281,20 @@ def impersonate_wrapper(text, state):
 
 
 def generate_chat_reply(text, state, regenerate=False, _continue=False, loading_message=True):
-    history = state['history']
     if regenerate or _continue:
         text = ''
+        history = state['history']
         if (len(history['visible']) == 1 and not history['visible'][0][0]) or len(history['internal']) == 0:
             yield history
             return
 
-    for history in chatbot_wrapper(text, state, regenerate=regenerate, _continue=_continue, loading_message=loading_message):
-        yield history
+    yield from chatbot_wrapper(
+        text,
+        state,
+        regenerate=regenerate,
+        _continue=_continue,
+        loading_message=loading_message,
+    )
 
 
 # Same as above but returns HTML for the UI
@@ -302,7 +308,7 @@ def generate_chat_reply_wrapper(text, state, regenerate=False, _continue=False):
         send_dummy_message(text, state)
         send_dummy_reply(state['start_with'], state)
 
-    for i, history in enumerate(generate_chat_reply(text, state, regenerate, _continue, loading_message=True)):
+    for history in generate_chat_reply(text, state, regenerate, _continue, loading_message=True):
         yield chat_html_wrapper(history, state['name1'], state['name2'], state['mode'], state['chat_style']), history
 
 
@@ -344,7 +350,7 @@ def send_dummy_message(text, state):
 
 def send_dummy_reply(text, state):
     history = state['history']
-    if len(history['visible']) > 0 and not history['visible'][-1][1] == '':
+    if len(history['visible']) > 0 and history['visible'][-1][1] != '':
         history['visible'].append(['', ''])
         history['internal'].append(['', ''])
 
@@ -387,10 +393,7 @@ def load_history(file, history):
     try:
         file = file.decode('utf-8')
         j = json.loads(file)
-        if 'internal' in j and 'visible' in j:
-            return j
-        else:
-            return history
+        return j if 'internal' in j and 'visible' in j else history
     except:
         return history
 
@@ -423,9 +426,7 @@ def load_persistent_history(state):
         if 'internal' in f and 'visible' in f:
             history = f
         else:
-            history = {'internal': [], 'visible': []}
-            history['internal'] = f['data']
-            history['visible'] = f['data_visible']
+            history = {'internal': f['data'], 'visible': f['data_visible']}
     else:
         history = {'internal': [], 'visible': []}
         if greeting != "":

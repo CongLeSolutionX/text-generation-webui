@@ -68,16 +68,8 @@ def _apply_string_extensions(function_name, text, state, is_chat=False):
                 else:
                     count += 1
 
-            if count == 2:
-                args = [text, state]
-            else:
-                args = [text]
-
-            if has_chat:
-                kwargs = {'is_chat': is_chat}
-            else:
-                kwargs = {}
-
+            args = [text, state] if count == 2 else [text]
+            kwargs = {'is_chat': is_chat} if has_chat else {}
             text = func(*args, **kwargs)
 
     return text
@@ -94,11 +86,14 @@ def _apply_chat_input_extensions(text, visible_text, state):
 
 # custom_generate_chat_prompt handling - currently only the first one will work
 def _apply_custom_generate_chat_prompt(text, state, **kwargs):
-    for extension, _ in iterator():
-        if hasattr(extension, 'custom_generate_chat_prompt'):
-            return extension.custom_generate_chat_prompt(text, state, **kwargs)
-
-    return None
+    return next(
+        (
+            extension.custom_generate_chat_prompt(text, state, **kwargs)
+            for extension, _ in iterator()
+            if hasattr(extension, 'custom_generate_chat_prompt')
+        ),
+        None,
+    )
 
 
 # Extension that modifies the input parameters before they are used
@@ -143,48 +138,54 @@ def _apply_logits_processor_extensions(function_name, processor_list, input_ids)
 # Get prompt length in tokens after applying extension functions which override the default tokenizer output
 # currently only the first one will work
 def _apply_custom_tokenized_length(prompt):
-    for extension, _ in iterator():
-        if hasattr(extension, 'custom_tokenized_length'):
-            return getattr(extension, 'custom_tokenized_length')(prompt)
-
-    return None
+    return next(
+        (
+            getattr(extension, 'custom_tokenized_length')(prompt)
+            for extension, _ in iterator()
+            if hasattr(extension, 'custom_tokenized_length')
+        ),
+        None,
+    )
 
 
 # Custom generate reply handling - currently only the first one will work
 def _apply_custom_generate_reply():
-    for extension, _ in iterator():
-        if hasattr(extension, 'custom_generate_reply'):
-            return getattr(extension, 'custom_generate_reply')
-
-    return None
+    return next(
+        (
+            getattr(extension, 'custom_generate_reply')
+            for extension, _ in iterator()
+            if hasattr(extension, 'custom_generate_reply')
+        ),
+        None,
+    )
 
 
 def _apply_custom_css():
-    all_css = ''
-    for extension, _ in iterator():
-        if hasattr(extension, 'custom_css'):
-            all_css += getattr(extension, 'custom_css')()
-
-    return all_css
+    return ''.join(
+        getattr(extension, 'custom_css')()
+        for extension, _ in iterator()
+        if hasattr(extension, 'custom_css')
+    )
 
 
 def _apply_custom_js():
-    all_js = ''
-    for extension, _ in iterator():
-        if hasattr(extension, 'custom_js'):
-            all_js += getattr(extension, 'custom_js')()
-
-    return all_js
+    return ''.join(
+        getattr(extension, 'custom_js')()
+        for extension, _ in iterator()
+        if hasattr(extension, 'custom_js')
+    )
 
 
 def create_extensions_block():
-    to_display = []
-    for extension, name in iterator():
-        if hasattr(extension, "ui") and not (hasattr(extension, 'params') and extension.params.get('is_tab', False)):
-            to_display.append((extension, name))
-
-    # Creating the extension ui elements
-    if len(to_display) > 0:
+    if to_display := [
+        (extension, name)
+        for extension, name in iterator()
+        if hasattr(extension, "ui")
+        and not (
+            hasattr(extension, 'params')
+            and extension.params.get('is_tab', False)
+        )
+    ]:
         with gr.Column(elem_id="extensions"):
             for row in to_display:
                 extension, _ = row

@@ -33,11 +33,7 @@ else:
 
 
 def llama_cpp_lib(model_file: Union[str, Path] = None):
-    if model_file is not None:
-        gguf_model = is_gguf(model_file)
-    else:
-        gguf_model = True
-
+    gguf_model = is_gguf(model_file) if model_file is not None else True
     if shared.args.cpu or llama_cpp_cuda is None:
         return llama_cpp if gguf_model else llama_cpp_ggml
     else:
@@ -57,12 +53,12 @@ class LlamaCppModel:
         self.model.__del__()
 
     @classmethod
-    def from_pretrained(self, path):
+    def from_pretrained(cls, path):
 
         Llama = llama_cpp_lib(path).Llama
         LlamaCache = llama_cpp_lib(path).LlamaCache
 
-        result = self()
+        result = cls()
         cache_capacity = 0
         if shared.args.cache_capacity is not None:
             if 'GiB' in shared.args.cache_capacity:
@@ -72,7 +68,7 @@ class LlamaCppModel:
             else:
                 cache_capacity = int(shared.args.cache_capacity)
 
-        logger.info("Cache capacity is " + str(cache_capacity) + " bytes")
+        logger.info(f"Cache capacity is {cache_capacity} bytes")
 
         if shared.args.tensor_split is None or shared.args.tensor_split.strip() == '':
             tensor_split_list = None
@@ -100,7 +96,7 @@ class LlamaCppModel:
                 'n_gqa': shared.args.n_gqa or None,
                 'rms_norm_eps': shared.args.rms_norm_eps or None,
             }
-            params = params | ggml_params
+            params |= ggml_params
 
         result.model = Llama(**params)
         if cache_capacity > 0:

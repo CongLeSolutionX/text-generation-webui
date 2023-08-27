@@ -4,7 +4,7 @@ import numpy as np
 from extensions.openai.utils import float_list_to_base64, debug_msg
 from extensions.openai.errors import *
 
-st_model = os.environ["OPENEDAI_EMBEDDING_MODEL"] if "OPENEDAI_EMBEDDING_MODEL" in os.environ else "all-mpnet-base-v2"
+st_model = os.environ.get("OPENEDAI_EMBEDDING_MODEL", "all-mpnet-base-v2")
 embeddings_model = None
 # OPENEDAI_EMBEDDING_DEVICE: auto (best or cpu), cpu, cuda, ipu, xpu, mkldnn, opengl, opencl, ideep, hip, ve, fpga, ort, xla, lazy, vulkan, mps, meta, hpu, mtia, privateuseone
 embeddings_device = os.environ.get("OPENEDAI_EMBEDDING_DEVICE", "cpu")

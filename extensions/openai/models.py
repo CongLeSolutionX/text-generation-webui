@@ -20,12 +20,6 @@ def get_pseudo_model_list() -> list:
 
 
 def load_model(model_name: str) -> dict:
-    resp = {
-        "id": model_name,
-        "object": "engine",
-        "owner": "self",
-        "ready": True,
-    }
     if model_name not in get_pseudo_model_list() + [get_embeddings_model_name()] + get_current_model_list():  # Real model only
         # No args. Maybe it works anyways!
         # TODO: hack some heuristics into args for better results
@@ -46,7 +40,12 @@ def load_model(model_name: str) -> dict:
             shared.model_name = "None"
             raise OpenAIError(f"Model load failed for: {shared.model_name}")
 
-    return resp
+    return {
+        "id": model_name,
+        "object": "engine",
+        "owner": "self",
+        "ready": True,
+    }
 
 
 def list_models(is_legacy: bool = False) -> dict:
@@ -62,12 +61,10 @@ def list_models(is_legacy: bool = False) -> dict:
     else:
         models = [{"id": id, "object": "model", "owned_by": "user", "permission": []} for id in all_model_list]
 
-    resp = {
+    return {
         "object": "list",
         "data": models,
     }
-
-    return resp
 
 
 def model_info(model_name: str) -> dict:

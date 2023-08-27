@@ -57,9 +57,7 @@ class PerplexityLogits(LogitsProcessor):
             self.selected_probs.append(1.0)  # Placeholder for the last token of the prompt
 
         if self.verbose:
-            pplbar = "-"
-            if not np.isnan(perplexity):
-                pplbar = "*" * round(perplexity)
+            pplbar = "*" * round(perplexity) if not np.isnan(perplexity) else "-"
             print(f"PPL: Token after {shared.tokenizer.decode(last_token_id)}\t{perplexity:.2f}\t{pplbar}")
 
         # Get top 5 probabilities
@@ -164,7 +162,7 @@ def perplexity_color_scale(ppl):
     if len(value) < 2:
         value = '0' * (2 - len(value)) + value
 
-    return 'ff' + value + value
+    return f'ff{value}{value}'
 
 
 def probability_perplexity_color_scale(prob, ppl):
@@ -279,7 +277,7 @@ def custom_css():
 # the probability dropdown, you probably care more about seeing the tokens the model actually outputted
 # rather than rendering ```code blocks``` or *italics*.
 def convert_to_markdown(string):
-    return '<pre>' + string + '</pre>'
+    return f'<pre>{string}</pre>'
 
 
 html_generator.convert_to_markdown = convert_to_markdown

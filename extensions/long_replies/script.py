@@ -23,7 +23,6 @@ class MyLogits(LogitsProcessor):
     """
     def __init__(self):
         self.newline_id = shared.tokenizer.encode('\n')[-1]
-        pass
 
     def __call__(self, input_ids, scores):
         if input_ids.shape[-1] - initial_size < params["min_length"]:
@@ -108,8 +107,7 @@ def custom_generate_chat_prompt(user_input, state, **kwargs):
     Replaces the function that generates the prompt from the chat history.
     Only used in chat mode.
     """
-    result = chat.generate_chat_prompt(user_input, state, **kwargs)
-    return result
+    return chat.generate_chat_prompt(user_input, state, **kwargs)
 
 def custom_css():
     """

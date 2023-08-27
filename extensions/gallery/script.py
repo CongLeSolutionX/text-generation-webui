@@ -7,7 +7,7 @@ from modules.shared import gradio
 
 
 def generate_css():
-    css = """
+    return """
       .character-gallery > .gallery {
         margin: 1rem 0;
         display: grid !important;
@@ -54,7 +54,6 @@ def generate_css():
         overflow-wrap: anywhere;
       }
     """
-    return css
 
 
 def generate_html():
@@ -64,13 +63,17 @@ def generate_html():
         if file.suffix in [".json", ".yml", ".yaml"]:
             character = file.stem
             container_html = '<div class="character-container">'
-            image_html = "<div class='placeholder'></div>"
-
-            for path in [Path(f"characters/{character}.{extension}") for extension in ['png', 'jpg', 'jpeg']]:
-                if path.exists():
-                    image_html = f'<img src="file/{get_image_cache(path)}">'
-                    break
-
+            image_html = next(
+                (
+                    f'<img src="file/{get_image_cache(path)}">'
+                    for path in [
+                        Path(f"characters/{character}.{extension}")
+                        for extension in ['png', 'jpg', 'jpeg']
+                    ]
+                    if path.exists()
+                ),
+                "<div class='placeholder'></div>",
+            )
             container_html += f'{image_html} <span class="character-name">{character}</span>'
             container_html += "</div>"
             cards.append([container_html, character])
@@ -90,7 +93,7 @@ def custom_js():
 def ui():
     with gr.Accordion("Character gallery", open=False, elem_id='gallery-extension'):
         update = gr.Button("Refresh")
-        gr.HTML(value="<style>" + generate_css() + "</style>")
+        gr.HTML(value=f"<style>{generate_css()}</style>")
         gallery = gr.Dataset(components=[gr.HTML(visible=False)],
                              label="",
                              samples=generate_html(),

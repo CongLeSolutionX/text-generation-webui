@@ -30,10 +30,7 @@ def feed_data_into_collector(corpus, chunk_len, chunk_sep):
     # Defining variables
     chunk_len = int(chunk_len)
     chunk_sep = chunk_sep.replace(r'\n', '\n')
-    cumulative = ''
-
-    # Breaking the data into chunks and adding those to the db
-    cumulative += "Breaking the input dataset...\n\n"
+    cumulative = '' + "Breaking the input dataset...\n\n"
     yield cumulative
     if chunk_sep:
         data_chunks = corpus.split(chunk_sep)
@@ -52,8 +49,7 @@ def feed_data_into_collector(corpus, chunk_len, chunk_sep):
 def feed_file_into_collector(file, chunk_len, chunk_sep):
     yield 'Reading the input dataset...\n\n'
     text = file.decode('utf-8')
-    for i in feed_data_into_collector(text, chunk_len, chunk_sep):
-        yield i
+    yield from feed_data_into_collector(text, chunk_len, chunk_sep)
 
 
 def feed_url_into_collector(urls, chunk_len, chunk_sep, strong_cleanup, threads):
@@ -80,8 +76,7 @@ def feed_url_into_collector(urls, chunk_len, chunk_sep, strong_cleanup, threads)
         text = '\n'.join([s.strip() for s in strings])
         all_text += text
 
-    for i in feed_data_into_collector(all_text, chunk_len, chunk_sep):
-        yield i
+    yield from feed_data_into_collector(all_text, chunk_len, chunk_sep)
 
 
 def apply_settings(chunk_count, chunk_count_initial, time_weight):
@@ -90,7 +85,7 @@ def apply_settings(chunk_count, chunk_count_initial, time_weight):
     params['chunk_count_initial'] = int(chunk_count_initial)
     params['time_weight'] = time_weight
     settings_to_display = {k: params[k] for k in params if k in ['chunk_count', 'chunk_count_initial', 'time_weight']}
-    yield f"The following settings are now active: {str(settings_to_display)}"
+    yield f"The following settings are now active: {settings_to_display}"
 
 
 def custom_generate_chat_prompt(user_input, state, **kwargs):
@@ -149,8 +144,7 @@ def input_modifier(string, state, is_chat=False):
 
     # Find the user input
     pattern = re.compile(r"<\|begin-user-input\|>(.*?)<\|end-user-input\|>", re.DOTALL)
-    match = re.search(pattern, string)
-    if match:
+    if match := re.search(pattern, string):
         user_input = match.group(1).strip()
 
         # Get the most similar chunks

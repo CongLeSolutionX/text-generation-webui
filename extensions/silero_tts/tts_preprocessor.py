@@ -88,7 +88,11 @@ def convert_num_locale(text):
 
         start = match.start()
         end = match.end()
-        result = result[0:start] + result[start:end].replace('.', '').replace(',', '.') + result[end:len(result)]
+        result = (
+            result[:start]
+            + result[start:end].replace('.', '').replace(',', '.')
+            + result[end:]
+        )
 
     # removes comma separators from existing American numbers
     pattern = re.compile(r'(\d),(\d)')
@@ -114,33 +118,34 @@ def replace_roman(string):
 
         start = match.start()
         end = match.end()
-        result = result[0:start + 1] + str(roman_to_int(result[start + 1:end - 1])) + result[end - 1:len(result)]
+        result = (
+            result[: start + 1]
+            + str(roman_to_int(result[start + 1 : end - 1]))
+            + result[end - 1 :]
+        )
 
     return result
 
 
 def roman_to_int(s):
     rom_val = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
-    int_val = 0
-    for i in range(len(s)):
-        if i > 0 and rom_val[s[i]] > rom_val[s[i - 1]]:
-            int_val += rom_val[s[i]] - 2 * rom_val[s[i - 1]]
-        else:
-            int_val += rom_val[s[i]]
-    return int_val
+    return sum(
+        rom_val[s[i]] - 2 * rom_val[s[i - 1]]
+        if i > 0 and rom_val[s[i]] > rom_val[s[i - 1]]
+        else rom_val[s[i]]
+        for i in range(len(s))
+    )
 
 
 def hyphen_range_to(text):
     pattern = re.compile(r'(\d+)[-–](\d+)')
-    result = pattern.sub(lambda x: x.group(1) + ' to ' + x.group(2), text)
-    return result
+    return pattern.sub(lambda x: f'{x.group(1)} to {x.group(2)}', text)
 
 
 def num_to_words(text):
     # 1000 or 10.23
     pattern = re.compile(r'\d+\.\d+|\d+')
-    result = pattern.sub(lambda x: num2words(float(x.group())), text)
-    return result
+    return pattern.sub(lambda x: num2words(float(x.group())), text)
 
 
 def replace_abbreviations(string):
@@ -154,7 +159,11 @@ def replace_abbreviations(string):
 
         start = match.start()
         end = match.end()
-        result = result[0:start] + replace_abbreviation(result[start:end]) + result[end:len(result)]
+        result = (
+            result[:start]
+            + replace_abbreviation(result[start:end])
+            + result[end:]
+        )
 
     return result
 
@@ -170,25 +179,28 @@ def replace_lowercase_abbreviations(string):
 
         start = match.start()
         end = match.end()
-        result = result[0:start] + replace_abbreviation(result[start:end].upper()) + result[end:len(result)]
+        result = (
+            result[:start]
+            + replace_abbreviation(result[start:end].upper())
+            + result[end:]
+        )
 
     return result
 
 
 def replace_abbreviation(string):
-    result = ""
-    for char in string:
-        result += match_mapping(char)
-
-    return result
+    return "".join(match_mapping(char) for char in string)
 
 
 def match_mapping(char):
-    for mapping in alphabet_map.keys():
-        if char == mapping:
-            return alphabet_map[char]
-
-    return char
+    return next(
+        (
+            alphabet_map[char]
+            for mapping in alphabet_map.keys()
+            if char == mapping
+        ),
+        char,
+    )
 
 
 def __main__(args):

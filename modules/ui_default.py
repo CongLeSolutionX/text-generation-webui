@@ -80,15 +80,22 @@ def create_event_handlers():
     shared.gradio['Stop-default'].click(stop_everything_event, None, None, queue=False)
     shared.gradio['prompt_menu-default'].change(load_prompt, gradio('prompt_menu-default'), gradio('textbox-default'), show_progress=False)
     shared.gradio['save_prompt-default'].click(
-        lambda x: x, gradio('textbox-default'), gradio('save_contents')).then(
-        lambda: 'prompts/', None, gradio('save_root')).then(
-        lambda: utils.current_time() + '.txt', None, gradio('save_filename')).then(
-        lambda: gr.update(visible=True), None, gradio('file_saver'))
+        lambda x: x, gradio('textbox-default'), gradio('save_contents')
+    ).then(lambda: 'prompts/', None, gradio('save_root')).then(
+        lambda: f'{utils.current_time()}.txt', None, gradio('save_filename')
+    ).then(
+        lambda: gr.update(visible=True), None, gradio('file_saver')
+    )
 
     shared.gradio['delete_prompt-default'].click(
-        lambda: 'prompts/', None, gradio('delete_root')).then(
-        lambda x: x + '.txt', gradio('prompt_menu-default'), gradio('delete_filename')).then(
-        lambda: gr.update(visible=True), None, gradio('file_deleter'))
+        lambda: 'prompts/', None, gradio('delete_root')
+    ).then(
+        lambda x: f'{x}.txt',
+        gradio('prompt_menu-default'),
+        gradio('delete_filename'),
+    ).then(
+        lambda: gr.update(visible=True), None, gradio('file_deleter')
+    )
 
     shared.gradio['textbox-default'].change(lambda x: f"<span>{count_tokens(x)}</span>", gradio('textbox-default'), gradio('token-counter-default'), show_progress=False)
     shared.gradio['get_logits-default'].click(

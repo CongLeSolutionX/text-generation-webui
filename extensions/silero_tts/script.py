@@ -48,10 +48,22 @@ def xmlesc(txt):
 
 def load_model():
     torch_cache_path = torch.hub.get_dir() if params['local_cache_path'] == '' else params['local_cache_path']
-    model_path = torch_cache_path + "/snakers4_silero-models_master/src/silero/model/" + params['model_id'] + ".pt"
+    model_path = (
+        f"{torch_cache_path}/snakers4_silero-models_master/src/silero/model/"
+        + params['model_id']
+        + ".pt"
+    )
     if Path(model_path).is_file():
         print(f'\nUsing Silero TTS cached checkpoint found at {torch_cache_path}')
-        model, example_text = torch.hub.load(repo_or_dir=torch_cache_path + '/snakers4_silero-models_master/', model='silero_tts', language=params['language'], speaker=params['model_id'], source='local', path=model_path, force_reload=True)
+        model, example_text = torch.hub.load(
+            repo_or_dir=f'{torch_cache_path}/snakers4_silero-models_master/',
+            model='silero_tts',
+            language=params['language'],
+            speaker=params['model_id'],
+            source='local',
+            path=model_path,
+            force_reload=True,
+        )
     else:
         print(f'\nSilero TTS cache not found at {torch_cache_path}. Attempting to download...')
         model, example_text = torch.hub.load(repo_or_dir='snakers4/silero-models', model='silero_tts', language=params['language'], speaker=params['model_id'])
@@ -125,7 +137,7 @@ def output_modifier(string, state):
         string = '*Empty reply, try regenerating*'
     else:
         output_file = Path(f'extensions/silero_tts/outputs/{state["character_menu"]}_{int(time.time())}.wav')
-        prosody = '<prosody rate="{}" pitch="{}">'.format(params['voice_speed'], params['voice_pitch'])
+        prosody = f"""<prosody rate="{params['voice_speed']}" pitch="{params['voice_pitch']}">"""
         silero_input = f'<speak>{prosody}{xmlesc(string)}</prosody></speak>'
         model.save_wav(ssml_text=silero_input, speaker=params['speaker'], sample_rate=int(params['sample_rate']), audio_path=str(output_file))
 

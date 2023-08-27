@@ -326,7 +326,7 @@ def list_all_samplers():
 def blacklist_samplers(loader):
     all_samplers = list_all_samplers()
     if loader == 'All':
-        return [gr.update(visible=True) for sampler in all_samplers]
+        return [gr.update(visible=True) for _ in all_samplers]
     else:
         return [gr.update(visible=True) if sampler in loaders_samplers[loader] else gr.update(visible=False) for sampler in all_samplers]
 

@@ -10,8 +10,8 @@ class CtransformersModel:
         pass
 
     @classmethod
-    def from_pretrained(self, path):
-        result = self()
+    def from_pretrained(cls, path):
+        result = cls()
 
         config = AutoConfig.from_pretrained(
             str(path),
@@ -24,23 +24,24 @@ class CtransformersModel:
             mlock=shared.args.mlock
         )
 
-        self.model = AutoModelForCausalLM.from_pretrained(
+        cls.model = AutoModelForCausalLM.from_pretrained(
             str(result.model_dir(path) if result.model_type_is_auto() else path),
-            model_type=(None if result.model_type_is_auto() else shared.args.model_type),
-            config=config
+            model_type=(
+                None if result.model_type_is_auto() else shared.args.model_type
+            ),
+            config=config,
         )
 
-        logger.info(f'Using ctransformers model_type: {self.model.model_type} for {self.model.model_path}')
+        logger.info(
+            f'Using ctransformers model_type: {cls.model.model_type} for {cls.model.model_path}'
+        )
         return result, result
 
     def model_type_is_auto(self):
         return shared.args.model_type is None or shared.args.model_type == "Auto" or shared.args.model_type == "None"
 
     def model_dir(self, path):
-        if path.is_file():
-            return path.parent
-
-        return path
+        return path.parent if path.is_file() else path
 
     def encode(self, string, **kwargs):
         return self.model.tokenize(string)
